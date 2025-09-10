@@ -18,6 +18,19 @@ class Game:
         ]).resolve_phase().generate_requests()
         return game, [player.request for player in game.players]
 
+    def to_dict(self):
+        return {
+            'phase': self.phase.name,
+            'players': [player.to_dict() for player in self.players]
+        }
+
+    @classmethod
+    def from_dict(cls, data):
+        return cls(
+            phase=Phase.__members__[data['phase']],
+            players=[Player.from_dict(player_data) for player_data in data['players']],
+        )
+
     def copy(self, phase=None, players=None) -> Self:
         return Game(
             self.phase if phase is None else phase,

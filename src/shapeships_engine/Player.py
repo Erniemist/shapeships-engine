@@ -32,6 +32,25 @@ class Player:
             raise ValueError(f"'{species} is not a valid species")
         return cls(species, 25, 0, {}, {})
 
+    def to_dict(self):
+        return {
+            'species': self.species.name,
+            'hp': self.hp,
+            'lines': self.lines,
+            'ships': self.ships,
+            'request': self.request,
+        }
+
+    @classmethod
+    def from_dict(cls, data):
+        return cls(
+            species=Species.__members__[data['species']],
+            hp=data['hp'],
+            lines=data['lines'],
+            ships=data['ships'],
+            request=data['request'],
+        )
+
     def copy(self, species=None, hp=None, lines=None, ships=None, request=None) -> Self:
         return Player(
             self.species if species is None else species,

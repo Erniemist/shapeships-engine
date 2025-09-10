@@ -118,3 +118,32 @@ def test_game_over():
     assert game.phase == Phase.GAME_OVER
 
     assert game.players[1].hp <= 0
+
+
+def test_dict_conversion():
+    random.seed(0)
+    game, _ = Game.start_game([Species.HUMAN, Species.XENITE])
+    game, _ = game.submit(0, {'type': 'build', 'option': {'fighter': 1}})
+    game, _ = game.submit(1, {'type': 'build', 'option': {'defender': 2}})
+    game, _ = game.next()
+
+    assert game.phase == Phase.BATTLE
+    assert game.players[0].species == 'Human'
+    assert game.players[0].hp == 25
+    assert game.players[0].lines == 1
+    assert game.players[0].ships == {'fighter': 1}
+    assert game.players[1].species == 'Xenite'
+    assert game.players[1].hp == 26
+    assert game.players[1].lines == 0
+    assert game.players[1].ships == {'defender': 2}
+
+    game = game.from_dict(game.to_dict())
+    assert game.phase == Phase.BATTLE
+    assert game.players[0].species == 'Human'
+    assert game.players[0].hp == 25
+    assert game.players[0].lines == 1
+    assert game.players[0].ships == {'fighter': 1}
+    assert game.players[1].species == 'Xenite'
+    assert game.players[1].hp == 26
+    assert game.players[1].lines == 0
+    assert game.players[1].ships == {'defender': 2}
