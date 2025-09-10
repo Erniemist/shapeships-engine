@@ -13,4 +13,15 @@ class Defender(Ship):
     def healing(self):
         return 1
 
-ship_types = {ship.name: ship for ship in [Defender]}
+class Fighter(Ship):
+    name = 'fighter'
+    cost = 3
+    fungible = True
+
+    def damage(self):
+        return 1
+
+    def healing(self):
+        return 0
+
+ship_types = {ship.name: ship for ship in [Defender, Fighter]}

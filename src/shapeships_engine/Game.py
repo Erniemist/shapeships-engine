@@ -13,9 +13,10 @@ class Game:
 
     @classmethod
     def start_game(cls, player_species) -> Self:
-        return cls(Phase.BUILD, [
+        game = cls(Phase.BUILD, [
             Player.new_player(species) for species in player_species
         ]).resolve_phase().generate_requests()
+        return game, [player.request for player in game.players]
 
     def copy(self, phase=None, players=None) -> Self:
         return Game(
@@ -27,7 +28,8 @@ class Game:
         requests = [player.request for player in self.players]
         if any(request != {} for request in requests):
             return self, requests
-        return self.next_phase().resolve_phase().generate_requests(), []
+        game = self.next_phase().resolve_phase().generate_requests()
+        return game, [player.request for player in game.players]
 
     def generate_requests(self):
         return self.copy(players=[player.generate_requests(self.phase) for player in self.players])
@@ -69,7 +71,11 @@ class Game:
                 else:
                     player_hps[j] -= damage
 
-        return self.copy(players=[
-            player.copy(hp=hp)
-            for hp, player in zip(player_hps, self.players)
-        ])
+        player_hps = [min(hp, 35) for hp in player_hps]
+
+        return self.copy(
+            phase=self.phase if all(hp > 0 for hp in player_hps) else Phase.GAME_OVER,
+            players=[
+                player.copy(hp=hp)
+                for hp, player in zip(player_hps, self.players)
+            ])
