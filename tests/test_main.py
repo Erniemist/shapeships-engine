@@ -63,8 +63,9 @@ def test_battle():
     game, requests = game.next()
     for player in game.players:
         assert player.hp == 25
-    game, success = game.submit(0, {'type': 'build', 'option': {'defender': 1}})
-    game, success = game.submit(1, {'type': 'build', 'option': {'defender': 2}})
+    game, success = game.submit(0, {'type': 'build', 'option': requests[0]['options'][1]})
+    game, success = game.submit(1, {'type': 'build', 'option': requests[1]['options'][2]})
     game, requests = game.next()
-    for player in game.players:
-        assert player.hp == 20
+    assert requests == []
+    assert game.players[0].hp == 26
+    assert game.players[1].hp == 27

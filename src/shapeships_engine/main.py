@@ -5,6 +5,8 @@ from enum import Enum, StrEnum, auto
 from functools import reduce
 from typing import Self
 
+from shapeships_engine.ships import ship_types
+
 
 class Species(StrEnum):
     HUMAN = 'Human'
@@ -24,7 +26,6 @@ class Player:
     lines: int
     ships: dict
     request: dict
-    ship_costs = {'defender': 2}
 
     @classmethod
     def new_player(cls, species) -> Self:
@@ -45,7 +46,26 @@ class Player:
         return self.copy(lines=self.lines + die_roll)
 
     def battle(self, other) -> Self:
-        return self.copy(hp=self.hp - 5)
+        total_healing, total_damage = 0, 0
+        for ship, quantity in self.ships.items():
+            healing, damage = self.get_ship_group_numbers(ship, quantity)
+            total_healing += healing
+            total_damage += damage
+        return total_healing, total_damage
+
+    def get_ship_group_numbers(self, ship, quantity):
+        ship = ship_types[ship]
+        if ship.fungible:
+            healing = ship(self).healing() * quantity
+            damage = ship(self).damage() * quantity
+        else:
+            healing = 0
+            damage = 0
+            for datum in quantity:
+                ship = ship(self, datum)
+                healing += ship.healing()
+                damage += ship.damage()
+        return healing, damage
 
     def generate_requests(self, phase) -> Self:
         if phase == Phase.BUILD:
@@ -59,11 +79,11 @@ class Player:
                 if proposal['seen']:
                     continue
                 proposal['seen'] = True
-                for name, line_cost in Player.ship_costs.items():
-                    if proposal['lines'] >= line_cost:
+                for name, ship_type in ship_types.items():
+                    if proposal['lines'] >= ship_type.cost:
                         new_proposal = {
                             'ships': deepcopy(proposal['ships']),
-                            'lines': proposal['lines'] - line_cost,
+                            'lines': proposal['lines'] - ship_type.cost,
                             'seen': False,
                         }
                         if name in proposal['ships'].keys():
@@ -91,7 +111,7 @@ class Player:
     def build(self, ships) -> Self:
         remaining_lines = self.lines
         for ship, quantity in ships.items():
-            remaining_lines -= quantity * Player.ship_costs[ship]
+            remaining_lines -= quantity * ship_types[ship].cost
             if remaining_lines < 0:
                 raise ProposalError()
 
@@ -166,10 +186,16 @@ class Game:
         return self.copy(players=[player.start_turn(die_roll) for player in self.players])
 
     def battle(self) -> Self:
+        player_hps = [player.hp for player in self.players]
+        for i, player in enumerate(self.players):
+            for j, other in enumerate(self.players):
+                healing, damage = player.battle(other)
+                if i == j:
+                    player_hps[j] += healing
+                else:
+                    player_hps[j] -= damage
+
         return self.copy(players=[
-            reduce(
-                lambda x, y: x.battle(y),
-                [other for other in self.players if player is not other],
-                player
-            ) for player in self.players
+            player.copy(hp=hp)
+            for hp, player in zip(player_hps, self.players)
         ])
