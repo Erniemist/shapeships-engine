@@ -1,6 +1,8 @@
 import random
 
-from shapeships_engine.main import Game, Species, Phase
+from shapeships_engine.Game import Game
+from shapeships_engine.Phase import Phase
+from shapeships_engine.Player import Species
 
 def test_start_game():
     random.seed(0)
